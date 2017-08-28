@@ -10,15 +10,27 @@ from lxml import etree
 DEFAULT_TOTAL_CLASSES = 20
 
 
-def read_classes(root):
-    path = os.path.join(root, 'ImageSets', 'Main')
+def read_annotations(root):
+    path = os.path.join(root, 'annotations')
 
-    classes = set()
+    annotations = {}
     for entry in os.listdir(path):
-        if "_" not in entry:
-            continue
-        class_name, _ = entry.split('_')
-        classes.add(class_name)
+        with open(os.path.join(path, entry), "r") as entry_json:
+            annotations_json = entry_json.read()
+            # TODO define better keys
+            annotations[entry] = json.loads(annotations_json)
+
+    return annotations
+
+
+def read_classes(annotations):
+
+    # TODO: figure out if we need to read classes from every annotation file
+    classes = set()
+    for key in annotations:
+        annotation_classes = annotations[key]['categories']
+        # TODO decide what to do with supercategories
+        classes |= set([x['name'] for x in annotation_classes])
 
     return list(sorted(classes))
 
@@ -65,11 +77,15 @@ def load_split(root, split='train'):
     if split not in ['train', 'val', 'test']:
         raise ValueError
 
-    split_path = os.path.join(
-        root, 'ImageSets', 'Main', '{}.txt'.format(split))
-    with tf.gfile.GFile(split_path) as f:
-        for line in f:
-            yield line.strip()
+    split_path = os.path.join(root, 'annotations')
+    for entry in os.listdir(split_path):
+        if split in entry:
+            with tf.gfile.GFile(os.path.join(split_path, entry), "r") as entry_json:
+                annotations_json = entry_json.read()
+                split_annotations = json.loads(annotations_json)
+
+    # Returns 'dict_keys(['categories', 'images', 'licenses', 'annotations', 'info'])'
+    return split_annotations
 
 
 def get_image_path(root, image_id):
@@ -102,9 +118,9 @@ def _string(value):
     )
 
 
-def image_to_example(data_dir, classes, image_id):
-    annotation_path = get_image_annotation(data_dir, image_id)
-    image_path = get_image_path(data_dir, image_id)
+def image_to_example(data_dir, classes, annotation):
+    # annotation_path = get_image_annotation(data_dir, image_id)
+    image_path = get_image_path(data_dir, annotation)
 
     # Read both the image and the annotation into memory.
     annotation = read_xml(annotation_path)
@@ -186,23 +202,25 @@ def coco(data_dir, output_dir, splits, ignore_splits, only_filename,
     tf.logging.info('Saving output_dir = {}'.format(output_dir))
     os.makedirs(output_dir, exist_ok=True)
 
-    classes = read_classes(data_dir)
+    annotations = read_annotations(data_dir)
+    classes = read_classes(annotations)
+    # classes = read_classes(annotations)
 
-    if limit_classes < DEFAULT_TOTAL_CLASSES:
-        random.seed(seed)
-        classes = random.sample(classes, limit_classes)
-        tf.logging.info('Limiting to {} classes: {}'.format(
-            limit_classes, classes
-        ))
+    # if limit_classes < DEFAULT_TOTAL_CLASSES:
+    #    random.seed(seed)
+    #    classes = random.sample(classes, limit_classes)
+    #    tf.logging.info('Limiting to {} classes: {}'.format(
+    #      limit_classes, classes
+    #    ))
 
-    if only_filename:
-        classes_filename = 'classes-{}.json'.format(only_filename)
-    elif limit_examples:
-        classes_filename = 'classes-top{}-{}classes.json'.format(
-            limit_examples, limit_classes
-        )
-    else:
-        classes_filename = 'classes.json'
+    # if only_filename:
+    #    classes_filename = 'classes-{}.json'.format(only_filename)
+    # elif limit_examples:
+    #    classes_filename = 'classes-top{}-{}classes.json'.format(
+    #      limit_examples, limit_classes
+    #    )
+    # else:
+    classes_filename = 'classes.json'
 
     classes_file = os.path.join(output_dir, classes_filename)
 
@@ -210,7 +228,7 @@ def coco(data_dir, output_dir, splits, ignore_splits, only_filename,
 
     splits = [s for s in splits if s not in set(ignore_splits)]
     tf.logging.debug(
-        'Generating outputs for splits = {}'.format(", ".join(splits)))
+      'Generating outputs for splits = {}'.format(", ".join(splits)))
 
     for split in splits:
         tf.logging.debug('Converting split = {}'.format(split))
@@ -218,7 +236,7 @@ def coco(data_dir, output_dir, splits, ignore_splits, only_filename,
             record_filename = '{}-{}.tfrecords'.format(split, only_filename)
         elif limit_examples:
             record_filename = '{}-top{}-{}classes.tfrecords'.format(
-                split, limit_examples, limit_classes
+              split, limit_examples, limit_classes
             )
         else:
             record_filename = '{}.tfrecords'.format(split)
@@ -227,14 +245,15 @@ def coco(data_dir, output_dir, splits, ignore_splits, only_filename,
         writer = tf.python_io.TFRecordWriter(record_file)
 
         total_examples = 0
-        for num, image_id in enumerate(load_split(data_dir, split)):
-            if not only_filename or only_filename == image_id:
-                # Using limit on classes it's possible for an image_to_example
-                # to return None (because no classes match).
-                example = image_to_example(data_dir, classes, image_id)
-                if example:
-                    total_examples += 1
-                    writer.write(example.SerializeToString())
+        for num, annotation in enumerate(load_split(data_dir, split)):
+            # TODO add this condition
+            # if not only_filename or only_filename == image_id:
+            # Using limit on classes it's possible for an image_to_example
+            # to return None (because no classes match).
+            example = image_to_example(data_dir, classes, annotation)
+            if example:
+                total_examples += 1
+                writer.write(example.SerializeToString())
 
             if limit_examples and total_examples == limit_examples:
                 break
