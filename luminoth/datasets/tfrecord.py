@@ -44,10 +44,7 @@ class TFRecordDataset(ObjectDetectionDataset):
 
         Returns:
             dequeue_dict ({}): Dequeued dict returning and image, bounding
-                boxes, filename and the scaling factor used.
-
-        TODO: Join filename, scaling_factor (and possible other fields) into a
-        metadata.
+                boxes, filename and metadata.
         """
 
         # Find split file from which we are going to read.
@@ -74,9 +71,7 @@ class TFRecordDataset(ObjectDetectionDataset):
         )
 
         # Decode and preprocess the example (crop, adjust mean and variance).
-        # image_jpeg = tf.decode_raw(example['image_raw'], tf.string)
         image_raw = tf.image.decode_jpeg(context_example['image_raw'])
-        # tf.summary.image('image_raw', image_raw, max_outputs=20)
 
         # Do we need per_image_standardization? Do it depend on pretrained?
         image = tf.cast(image_raw, tf.float32)
