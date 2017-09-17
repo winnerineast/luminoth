@@ -166,7 +166,7 @@ rpn:
 rcnn:
   enabled: True  # if disabled, then the rest of the config values will not be used.
   # FC layer sizes
-  layer_sizes: [4096, 4096]
+  layer_sizes: [512]
   # Dropout keep probability (turn off with 1.0 value)
   dropout_keep_prop: 1.0
   activation_function: relu6

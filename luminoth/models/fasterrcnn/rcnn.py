@@ -37,8 +37,6 @@ class RCNN(snt.AbstractModule):
         self._num_classes = num_classes
         # List of the fully connected layer sized used before classifying and
         # adjusting the bounding box.
-        self._layer_sizes = config.layer_sizes
-        self._activation = tf.nn.relu6
         self._dropout_keep_prob = config.dropout_keep_prop
 
         self.initializer = get_initializer(config.initializer, seed=seed)
@@ -52,18 +50,6 @@ class RCNN(snt.AbstractModule):
         self._seed = seed
 
     def _instantiate_layers(self):
-        # We define layers as an array since they are simple fully conected
-        # ones and it should be easy to tune it from the network config.
-        self._layers = [
-            snt.Linear(
-                layer_size,
-                name="fc_{}".format(i),
-                initializers={'w': self.initializer},
-                regularizers={'w': self.regularizer},
-            )
-            for i, layer_size in enumerate(self._layer_sizes)
-        ]
-
         # We define the classifier layer having a num_classes + 1 background
         # since we want to be able to predict if the proposal is background as
         # well.
@@ -162,32 +148,25 @@ class RCNN(snt.AbstractModule):
             # Save raw roi prediction in debug mode.
             prediction_dict['_debug']['roi'] = roi_prediction
 
-        pooled_layer = roi_prediction['roi_pool']
+        pooled_features = roi_prediction['roi_pool']
+
+        # We avg our height and width dimensions for a more "memory-friendly"
+        # vector.
+        spatial_avg_pool = tf.reduce_mean(
+            pooled_features, [1, 2], keep_dims=True
+        )
 
         # We treat num proposals as batch number so that when flattening we
         # get a (num_proposals, flatten_pooled_feature_map_size) Tensor.
-        flatten_net = tf.contrib.layers.flatten(pooled_layer)
-        net = tf.identity(flatten_net)
+        flatten_features = tf.contrib.layers.flatten(spatial_avg_pool)
 
-        if self._debug:
-            prediction_dict['_debug']['flatten_net'] = net
+        flatten_features = tf.nn.dropout(
+            flatten_features, keep_prob=self._dropout_keep_prob
+        )
 
-        # After flattening we are lef with a
-        # (num_proposals, pool_height * pool_width * 512) Tensor.
-        # The first dimension works as batch size when applied to snt.Linear.
-        for i, layer in enumerate(self._layers):
-            # Through FC layer.
-            net = layer(net)
-            if self._debug:
-                prediction_dict['_debug']['layer_{}_out'.format(i)] = net
-
-            # Apply activation and dropout.
-            net = self._activation(net)
-            net = tf.nn.dropout(net, keep_prob=self._dropout_keep_prob)
-
-        cls_score = self._classifier_layer(net)
+        cls_score = self._classifier_layer(flatten_features)
         cls_prob = tf.nn.softmax(cls_score, dim=1)
-        bbox_offsets = self._bbox_layer(net)
+        bbox_offsets = self._bbox_layer(flatten_features)
 
         prediction_dict['rcnn'] = {
             'cls_score': cls_score,
@@ -212,7 +191,7 @@ class RCNN(snt.AbstractModule):
         # Calculate summaries for results
         variable_summaries(cls_prob, 'cls_prob', ['rcnn'])
         variable_summaries(bbox_offsets, 'bbox_offsets', ['rcnn'])
-        variable_summaries(pooled_layer, 'pooled_layer', ['rcnn'])
+        variable_summaries(pooled_features, 'pooled_layer', ['rcnn'])
 
         layer_summaries(self._classifier_layer, ['rcnn'])
         layer_summaries(self._bbox_layer, ['rcnn'])
