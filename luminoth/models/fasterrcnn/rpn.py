@@ -165,7 +165,6 @@ class RPN(snt.AbstractModule):
                 prediction_dict['rpn_max_overlap'] = rpn_max_overlap
 
             variable_summaries(rpn_bbox_target, 'rpn_bbox_target', ['rpn'])
-            variable_summaries(rpn_bbox_target, 'rpn_bbox_target', ['rpn'])
 
         variable_summaries(
             proposal_prediction['nms_proposals_scores'], 'rpn_scores', ['rpn'])
