@@ -302,6 +302,6 @@ class RPN(snt.AbstractModule):
             prediction_dict['reg_loss_per_anchor'] = reg_loss_per_anchor
 
             return {
-                'rpn_cls_loss': tf.reduce_mean(ce_per_anchor),
-                'rpn_reg_loss': tf.reduce_mean(reg_loss_per_anchor),
+                'rpn_cls_loss': tf.reduce_sum(ce_per_anchor),
+                'rpn_reg_loss': tf.reduce_sum(reg_loss_per_anchor),
             }
