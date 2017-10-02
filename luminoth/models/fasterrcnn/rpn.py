@@ -125,7 +125,7 @@ class RPN(snt.AbstractModule):
 
         prediction_dict = {}
 
-        rpn_feature = self._rpn_activation(self._rpn(pretrained_feature_map))
+        rpn_feature = self._rpn(pretrained_feature_map)
 
         # Then we apply separate conv layers for classification and regression.
         rpn_cls_score_original = self._rpn_cls(rpn_feature)
