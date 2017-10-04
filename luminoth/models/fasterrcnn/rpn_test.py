@@ -64,7 +64,7 @@ class RPNTest(tf.test.TestCase):
         )
 
         # Use 4 ground truth boxes.
-        gt_boxes_shape = (4, 4)
+        gt_boxes_shape = (128, 4)
         gt_boxes = tf.placeholder(tf.float32, shape=gt_boxes_shape)
         image_shape_shape = (2,)
         image_shape = tf.placeholder(tf.float32, shape=image_shape_shape)

@@ -3,6 +3,7 @@ import tensorflow as tf
 
 from easydict import EasyDict
 from luminoth.models.fasterrcnn.rcnn import RCNN
+from luminoth.utils.test import generate_gt_boxes
 
 
 class RCNNTest(tf.test.TestCase):
@@ -221,16 +222,12 @@ class RCNNTest(tf.test.TestCase):
                 self._pretrained_feature_map_ph: np.random.rand(
                     *self._pretrained_feature_map_shape
                 ),
-                self._proposals_ph: np.random.randint(
-                    low=0,
-                    high=np.amin(self._image_shape),
-                    size=self._proposals_shape,
+                self._proposals_ph: generate_gt_boxes(
+                    self._num_proposals, self._image_shape, add_batch=True
                 ),
                 self._image_shape_ph: self._image_shape,
-                self._gt_boxes_ph: np.random.randint(
-                    low=0,
-                    high=np.amin(self._image_shape),
-                    size=self._gt_boxes_shape,
+                self._gt_boxes_ph: generate_gt_boxes(
+                    self._total_num_gt, self._image_shape, total_classes=10
                 ),
             }
         )
