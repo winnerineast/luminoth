@@ -7,22 +7,22 @@ import time
 
 from tensorflow.python import debug as tf_debug
 
-from luminoth.datasets.datasets import get_dataset
-from luminoth.models import get_model
-from luminoth.utils.config import get_model_config
+from luminoth.datasets import get_dataset
+from luminoth.models import (
+    get_model, DEFAULT_MODEL
+)
+from luminoth.utils.config import (
+    get_model_config, load_config
+)
 from luminoth.utils.hooks import ImageVisHook
 from luminoth.utils.training import (
     get_optimizer, clip_gradients_by_norm
 )
 
 
-<<<<<<< HEAD
-def run(model_type, dataset_type, config_file, override_params, target='',
-        cluster_spec=None, is_chief=True, job_name=None, task_index=None,
-        get_dataset_fn=get_dataset, get_model_fn=get_model, **kwargs):
-=======
 def run(config_files, override_params, target='', cluster_spec=None,
-        is_chief=True, job_name=None, task_index=None):
+        is_chief=True, job_name=None, task_index=None, get_model_fn=get_model,
+        get_dataset_fn=get_dataset):
 
     custom_config = load_config(
         config_files, overwrite=True, warn_overwrite=True)
@@ -30,12 +30,11 @@ def run(config_files, override_params, target='', cluster_spec=None,
     # default model.
     custom_config_model = custom_config.get('model', {})
     model_type = custom_config_model.get('type', DEFAULT_MODEL)
->>>>>>> No longer ignore model.base_network.weights
 
     model_class = get_model_fn(model_type)
 
     config = get_model_config(
-        model_class.base_config, config_file, override_params, **kwargs
+        model_class.base_config, custom_config, override_params,
     )
 
     if config.train.get('seed') is not None:
@@ -181,7 +180,7 @@ def run(config_files, override_params, target='', cluster_spec=None,
         try:
             while not coord.should_stop():
                 before = time.time()
-                _, train_loss, step, filename = sess.run([
+                (_, train_loss, step, filename) = sess.run([
                     train_op, total_loss, global_step, train_filename
                 ], options=run_options)
 
@@ -248,8 +247,7 @@ def train(config_files, override_params):
         return run(
             config_files=config_files, override_params=override_params,
             target=server.target, cluster_spec=cluster_spec,
-            is_chief=is_chief, job_name=job_name, task_index=task_index,
-            **kwargs
+            is_chief=is_chief, job_name=job_name, task_index=task_index
         )
 
 
