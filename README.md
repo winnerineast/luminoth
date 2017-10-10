@@ -17,6 +17,8 @@ Luminoth is a computer vision toolkit made with [Tensorflow](https://www.tensorf
 - Straightforward implementations with TensorBoard support.
 - Cloud integration for training and deploying.
 
+Currently we support trainable object detection functionalities, using an implementation of [Faster RCNN](https://arxiv.org/abs/1506.01497).
+
 > **DISCLAIMER**: This is currently a pre-pre-alpha release, we decided to open-source it up for those inquisive minds that don't mind getting their hands dirty with rough edges of code.
 
 ## Why Luminoth
