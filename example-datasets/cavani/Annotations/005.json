@@ -1,0 +1,35 @@
+{
+    "size": {
+        "width": 988,
+        "height": 556
+    },
+    "objects": [
+        {
+            "id": "cavani",
+            "bbox": {
+                "xmin": 151,
+                "xmax": 431,
+                "ymin": 7,
+                "ymax": 555
+            }
+        },
+        {
+            "id": "notcavani",
+            "bbox": {
+                "xmin": 323,
+                "xmax": 496,
+                "ymin": 16,
+                "ymax": 555
+            }
+        },
+        {
+            "id": "notcavani",
+            "bbox": {
+                "xmin": 695,
+                "xmax": 922,
+                "ymin": 182,
+                "ymax": 555
+            }
+        }
+    ]
+}
