@@ -49,18 +49,21 @@ def run(model_type, dataset_type, config_file, override_params, target='',
 
         dataset_class = get_dataset_fn(dataset_type)
         dataset = dataset_class(config)
-        train_dataset = dataset()
+        iterator = dataset()
 
-        train_image = train_dataset['image']
-        train_filename = train_dataset['filename']
-        train_bboxes = train_dataset['bboxes']
+        next_example = iterator.get_next()
+        # import ipdb; ipdb.set_trace()
+
+        train_image = next_example['image']
+        train_filename = next_example['filename'][0]
+        train_bboxes = next_example['bboxes'][0]
 
         # TODO: This is not the best place to configure rank? Why is rank not
         # transmitted through the queue
-        train_image.set_shape((None, None, 3))
+        # train_image.set_shape((None, None, 3))
         # We add fake batch dimension to train data.
         # TODO: DEFINITELY NOT THE BEST PLACE
-        train_image = tf.expand_dims(train_image, 0)
+        # train_image = tf.expand_dims(train_image, 0)
 
         prediction_dict = model(train_image, train_bboxes, is_training=True)
         total_loss = model.loss(prediction_dict)
@@ -164,7 +167,7 @@ def run(model_type, dataset_type, config_file, override_params, target='',
     ) as sess:
 
         coord = tf.train.Coordinator()
-        threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+        # threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
         try:
             while not coord.should_stop():
@@ -193,7 +196,7 @@ def run(model_type, dataset_type, config_file, override_params, target='',
             coord.request_stop()
 
         # Wait for all threads to stop.
-        coord.join(threads)
+        coord.join()
 
 
 @click.command(help='Train models')

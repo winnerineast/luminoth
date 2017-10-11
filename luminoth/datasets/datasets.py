@@ -1,7 +1,8 @@
-from luminoth.datasets import TFRecordDataset
+# from luminoth.datasets import TFRecordDataset
+from luminoth.datasets import TFRecordDatasetTfApi
 
 DATASETS = {
-    'tfrecord': TFRecordDataset,
+    'tfrecord': TFRecordDatasetTfApi,
 }
 
 
