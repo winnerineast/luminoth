@@ -5,11 +5,13 @@ import tensorflow as tf
 from .dataset import RecordSaver, InvalidDataDirectory
 from .imagenet import ImageNet
 from .pascalvoc import PascalVOC
+from .cavani import Cavani
 
 VALID_DATASETS = {
     'voc': PascalVOC,
     'pascalvoc': PascalVOC,
     'imagenet': ImageNet,
+    'cavani': Cavani
 }
 
 
